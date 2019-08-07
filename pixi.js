@@ -1,7 +1,8 @@
-let Application = PIXI.Application
-loader = PIXI.loader,
+let Application = PIXI.Application,
+  loader = PIXI.loader,
   resources = PIXI.loader.resources,
-  Sprite = PIXI.Sprite;
+  Sprite = PIXI.Sprite,
+  Container = PIXI.Container;
 
 let app = new Application({
   width: 480,
@@ -12,7 +13,7 @@ document.body.appendChild(app.view);
 
 app.renderer.backgroundColor = 0xADD8E6;
 app.renderer.view.style.display = "block";
-app.renderer.view.style.margin = '0 auto';
+app.renderer.view.style.margin = '4% auto';
 
 // Наш объект, игровое окно, здесь прописываются основные его параметры
 const game = {
@@ -32,28 +33,39 @@ const game = {
   //Мап с неподвижными блоками
   blocks: new Map(),
   level: 5
-}
+};
 
 // загружаю спрайты кубиков
 loader
-  .add([
-    'res/stone_E-07.png',
-    'res/stone_Q-07.png',
-    'res/stone_R-07.png',
-    'res/stone_W-07.png'
-  ])
+  .add('res/blocks.json')
   .load(setup);
 
 let block, state;
 
 function setup() {
-  block = new Sprite(resources['res/stone_E-07.png'].texture);
+  block = new Sprite(resources['res/blocks.json'].textures['stone_E-07.png']);
+
+  // в этом контейнере будут все наши игровые спрайты.
+  // думаю, что у этого контейнера будет bg transparent,
+  // чтобы был виден игровой фон основного контейнера - канваса
+  // так же Хранение их вместе в группе gameScene позволит нам
+  // легко скрыть gameScene и отобразить gameOverScene после завершения игры.
+  gameScene = new Container();
+  app.stage.addChild(gameScene);
+  gameScene.addChild(block);
+
+  // здесь у нас будет отображение проигрыша
+  // вместо div в разметке и стилизации при помощи css
+  gameOverScene = new Container();
+  app.stage.addChild(gameOverScene);
+  gameOverScene.visible = false;
+
+  // app.stage.addChild(block);
   block.x = app.screen.width / 2;
   block.y = app.screen.height / 2;
   block.anchor.set(0.5);
   block.vx = 0;
   block.vy = 0;
-  app.stage.addChild(block);
 
   let left = keyboard("ArrowLeft"),
     up = keyboard("ArrowUp"),
@@ -122,7 +134,7 @@ function setup() {
   app.ticker.add(delta => gameLoop(delta));
 }
 
-// функция игрового цикла, название может быть любым
+// функция игрового цикла
 // The delta value represents the amount of fractional lag between frames.
 // You can optionally add it to the block's position,
 // to make the block's animation independent of the frame rate.
